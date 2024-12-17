@@ -8,16 +8,18 @@ dotenv.config({
     path: './.env'
 });
 
-cloudinary.config({ 
-    cloud_name: process.env.cloudinary_cloud_name, 
-    api_key: process.env.cloudinary_api_key, 
-    api_secret: process.env.cloudinary_api_secret 
+// const cloudinary = require('cloudinary');
+
+cloudinary.config({
+  cloud_name:process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
 });
 
 
 const uploadOnCloudinary=async(localFilepath)=>{
-// console.log(fs.existsSync(localFilepath)); // Should return true
-
+    
     try{
             if(!localFilepath) return null
           const response=  await cloudinary.uploader.upload(localFilepath,{
