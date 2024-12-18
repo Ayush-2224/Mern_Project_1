@@ -3,7 +3,7 @@ import { logoutUser, registerUser,loginUser,refreshAccessToken,changeCurrentPass
 import {upload} from "../middlewares/multer.middleware.js"
 const router =Router()
 import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { get } from "mongoose";
+// import { get } from "mongoose";
 router.route("/register").post(
     upload.fields([
         {

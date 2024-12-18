@@ -123,7 +123,7 @@ const loginUser =asyncHandler(async(req,res)=>{
 
 const logoutUser=asyncHandler(async(req,res)=>{
   await User.findByIdAndUpdate(req.user._id,{
-    $set:{refreshToken:undefined}
+    $unset:{refreshToken:1}
   },{
     new:true
   })
@@ -262,7 +262,7 @@ const getUserchannelProfile=asyncHandler(async(req,res)=>{
        {
         $lookup:{
           from:"subscriptions",
-        localField:_id,
+        localField:"_id",
         foreignField:"channnel",
          as:"subscribers"       }
        },
@@ -270,7 +270,7 @@ const getUserchannelProfile=asyncHandler(async(req,res)=>{
         
           $lookup:{
             from:"subscriptions",
-          localField:_id,
+          localField:"_id",
           foreignField:"subscriber",
            as:"subscribedTo"       }
          
@@ -308,53 +308,60 @@ const getUserchannelProfile=asyncHandler(async(req,res)=>{
     throw new ApiError(404,"Channel doesnot exists")
   }
 
-  return res.ststus(200).json(200,channel[0],"Channel fetched successfully")
+  return res.status(200).json(200,channel[0],"Channel fetched successfully")
 })
 
-const getWatchHistory=asyncHandler(async(req,res)=>{
-      const user = await User.aggregate([
-        {
-          $match:{
-            _id:new mongoose.Types.ObjectId(req.user._id)
-          }
-        },
-        {
-           $lookup:{
-              from:"videos",
-              localField:"watchHistory",
-              foreignField:"_id",
-              as:"watchHistory",
-              pipeline:[
+const getWatchHistory = asyncHandler(async (req, res) => {
+  const user = await User.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(req.user._id)
+      }
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
                 {
-                  from:"users",
-                  localfield:"owner",
-                  foreignField:"_id",
-                  as:"owner",
-                  pipeline:[
-                    {
-                      $project:{
-                        fullName:1,
-                        username:1,
-                        avataar:1
-                      }
-                    }
-                  ]
-              },
-              {
-                $addFields:{
-                  owner:{
-                    $first:"$owner"
+                  $project: {
+                    fullName: 1,
+                    username: 1,
+                    avatar: 1
                   }
                 }
-              }
-            ]
-           }
-        }
-      ]) 
+              ]
+            }
+          },
+          {
+            $addFields: {
+              owner: { $first: "$owner" }
+            }
+          }
+        ]
+      }
+    }
+  ]);
 
-      return res.status(200)
-      .json(new ApiResponse(200,user[0].getWatchHistory,"WatchHistory feftched Successfully"))
-})
+  if (!user.length) {
+    return res.status(404).json(new ApiResponse(404, null, "User not found"));
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user[0].watchHistory, "Watch History fetched successfully"));
+});
+
+   
 export {registerUser,loginUser,logoutUser,
   refreshAccessToken,getUser,changeCurrentPassword,
   updateAccountDetails,updateUserAvatar,updateUserCover,getUserchannelProfile,getWatchHistory}
